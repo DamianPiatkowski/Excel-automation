@@ -13,7 +13,7 @@ class TestApp(unittest.TestCase):
 
                 result = excel_shopping_tracker.collect_user_input(categories)
                 mocked_print.assert_called_with("cool")
-                self.assertEqual(result, [{'date': '10/12/2020', 'amount': '123', 'category': 'game', 'description': 'Zelda rules'}])
+                self.assertEqual(result, [{'date': '10/12/2020', 'amount': 123, 'category': 'game', 'description': 'Zelda rules'}])
     
     def test_collect_user_input_wrong_formats_first(self):
         with patch('builtins.print') as mocked_print:
@@ -22,7 +22,7 @@ class TestApp(unittest.TestCase):
 
                 result = excel_shopping_tracker.collect_user_input(categories)
                 mocked_print.assert_called_with("cool")
-                self.assertEqual(result, [{'date': '10/12/2019', 'amount': '100', 'category': 'baby', 'description': '2 packages of diapers'}])
+                self.assertEqual(result, [{'date': '10/12/2019', 'amount': 100, 'category': 'baby', 'description': '2 packages of diapers'}])
 
     def test_collect_user_input_multiple_rows(self):
         with patch('builtins.print') as mocked_print:
@@ -38,9 +38,9 @@ class TestApp(unittest.TestCase):
                 self.assertEqual(
                     result,
                     [
-                        {'date': '10/01/2021', 'amount': '100', 'category': 'car related', 'description': 'fuel'},
-                        {'date': '12/01/2021', 'amount': '23', 'category': 'game', 'description': 'Mario'}, 
-                        {'date': '14/01/2021', 'amount': '455', 'category': 'groceries', 'description': 'Auchan'}
+                        {'date': '10/01/2021', 'amount': 100, 'category': 'car related', 'description': 'fuel'},
+                        {'date': '12/01/2021', 'amount': 23, 'category': 'game', 'description': 'Mario'}, 
+                        {'date': '14/01/2021', 'amount': 455, 'category': 'groceries', 'description': 'Auchan'}
                     ]
                 )
 
