@@ -82,12 +82,24 @@ def save_new_rows_to_excel(rows: list):
     
     workbook.save(filename=file_path)
 
+def show_stats_options() -> list:
+    workbook = load_workbook(filename=file_path)
+    sheet = workbook.active
+    options = []
+    for row in sheet.iter_rows(min_row=2,min_col=1, max_col=4, values_only=True):
+        month_year = datetime.strftime(row[0], "%m/%y")
+        if month_year not in options:
+            options.append(month_year) 
+    #add here printing message to user
+    return options   
+
 def main():
     save_new_rows_to_excel([
                         {'date': '10/01/2021', 'amount': 100, 'category': 'car related', 'description': 'fuel'},
                         {'date': '12/01/2021', 'amount': 23, 'category': 'game', 'description': 'Mario'}, 
                         {'date': '14/01/2021', 'amount': 455, 'category': 'groceries', 'description': 'Auchan'}
                     ])
+    print(show_stats_options())
     print(collect_user_input(categories))
 
 if __name__ == "__main__":
