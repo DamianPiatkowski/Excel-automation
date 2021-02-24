@@ -82,7 +82,7 @@ def save_new_rows_to_excel(rows: list):
     
     workbook.save(filename=file_path)
 
-def show_stats_options() -> list:
+def get_stats_options() -> list:
     workbook = load_workbook(filename=file_path)
     sheet = workbook.active
     options = []
@@ -91,7 +91,48 @@ def show_stats_options() -> list:
         if month_year not in options:
             options.append(month_year) 
     #add here printing message to user
-    return options   
+    # Sort chronologically in case the user did not feed excel with dates in chronological order 
+    options.sort(key= lambda date: datetime.strptime(date, "%m/%y"))
+    return options
+
+def get_user_request(stats_options: list) -> list:  
+    print("You can get summary for the following months:")
+    for option in stats_options:
+        print(option)
+    user_choices = []
+    while True:
+        answer = input("Would you like to see statistics for any of these months? yes/no")
+        if answer.lower() == "no":
+            return user_choices
+        elif answer.lower() == "yes":
+            break
+        else:
+            print("Something went wrong, only yes or no answers are valid, try again")
+    
+    while True:
+        while True:
+            option_chosen = input("Write what option in format mm/YY, for example 01/20 for January 2020")
+            if option_chosen in stats_options and option_chosen not in user_choices:
+                user_choices.append(option_chosen)
+                print(option_chosen + "added to your request")
+                break
+            else:
+                print("your chosen option is not on the list or you've added it already, please try again")
+                for option in stats_options:
+                    print(option)
+        
+        while True:
+            print("So far you have requested statistics for these months:")
+            for option in user_choices:
+                print(option)
+            want_quit = input("Would you like to add another month to your request? yes/no")
+            if want_quit.lower() == "no":
+                return user_choices
+            elif want_quit.lower() == "yes":
+                break
+            else:
+                print("Something went wrong, try again: yes/no")
+    return user_choices    
 
 def main():
     save_new_rows_to_excel([
@@ -99,8 +140,10 @@ def main():
                         {'date': '12/01/2021', 'amount': 23, 'category': 'game', 'description': 'Mario'}, 
                         {'date': '14/01/2021', 'amount': 455, 'category': 'groceries', 'description': 'Auchan'}
                     ])
-    print(show_stats_options())
-    print(collect_user_input(categories))
+    stats_options = get_stats_options()
+    user_choices = get_user_request(stats_options)
+    print(user_choices)
+    #print(collect_user_input(categories))
 
 if __name__ == "__main__":
     main()
