@@ -14,6 +14,16 @@ def validate_date(user_input: str) -> bool:
         print("Incorrect date format, should be dd/mm/yyyy")
         return False
 
+def any_rows_to_add() -> bool:
+    while True:
+        answer = input("Would you like to add any new transactions to Excel? yes/no ")
+        if answer.lower() == "yes":
+            return True
+        elif answer.lower() == "no":
+            return False
+        else:
+            print("Only yes or no answers accepted, try again")
+
 def collect_user_input(categories: list) -> list:
     new_rows = []
     while True:
@@ -154,28 +164,28 @@ def get_stats_data(categories: list, user_choices: list) -> list:
         new_dict["categories"] = {}
         for category in categories:
             new_dict["categories"][category] = sum([i[1] for i in all_transactions if i[2] == category])
-        print(new_dict)
+        stats_data.append(new_dict)
+    return stats_data
         
-
-
-
-
-#def print_stats(stats_data: list):
+def print_stats(stats_data: list):
+    print(stats_data)
 
 #def plot(stats_data):
 
 def main():
-    new_rows = collect_user_input(categories)
     if os.path.isfile(file_path) == False:
         create_new_excel()
-    save_new_rows_to_excel(new_rows)
+    if any_rows_to_add():
+        new_rows = collect_user_input(categories)
+        save_new_rows_to_excel(new_rows)
     stats_options = get_stats_options()
-    user_choices = get_user_request(stats_options)
-    if user_choices != []:
-        stats_data = get_stats_data(categories, user_choices)
-        #print_stats(stats_data)
-        #if len(user_choices) > 1:
-            #plot(user_choices)
+    if stats_options != []:
+        user_choices = get_user_request(stats_options)
+        if user_choices != []:
+            stats_data = get_stats_data(categories, user_choices)
+            print_stats(stats_data)
+            #if len(user_choices) > 1:
+                #plot(user_choices)
     input("Hit the enter to exit. Thanks!")
 
 if __name__ == "__main__":
