@@ -103,49 +103,57 @@ def get_stats_options() -> list:
         month_year = datetime.strftime(row[0], "%m/%y")
         if month_year not in options:
             options.append(month_year) 
-    #add here printing message to user
     # Sort chronologically in case the user did not feed excel with dates in chronological order 
     options.sort(key= lambda date: datetime.strptime(date, "%m/%y"))
-    return options
+    return options  
 
 def get_user_request(stats_options: list) -> list:  
-    print("You can get summary for the following months:")
-    for option in stats_options:
-        print(option)
-    user_choices = []
+    '''Ask if user wants to see stats.
+    If no, return empty list. If yes, print the available options.
+    Return a sorted list of chosen options'''
+    
     while True:
-        answer = input("Would you like to see statistics for any of these months? yes/no ")
+        answer = input("Would you like to see statistics? yes/no ")
         if answer.lower() == "no":
-            return user_choices
+            return []
         elif answer.lower() == "yes":
             break
         else:
             print("Something went wrong, only yes or no answers are valid, try again")
     
     while True:
-        while True:
-            option_chosen = input("Write what option in format mm/YY, for example 01/20 for January 2020 ")
-            if option_chosen in stats_options and option_chosen not in user_choices:
-                user_choices.append(option_chosen)
-                print(option_chosen + "added to your request")
-                break
-            else:
-                print("your chosen option is not on the list or you've added it already, please try again")
-                for option in stats_options:
-                    print(option)
+        print("\nYou can get summary for the following months:")
+        for option in stats_options:
+            print(option)
         
+        user_choices = []
         while True:
-            print("So far you have requested statistics for these months:")
+            options_chosen = input(
+                "\nWrite which months in format mm/YY, seperate them by one space, for example:"
+                "\n'01/20 02/20 03/20 04/20' Your choices: "
+            )
+            
+            for option in options_chosen.split():
+                if option in stats_options:
+                    user_choices.append(option)
+                else:
+                    print(
+                        "\n" + option + " is not available."
+                        "\nMake sure the option is valid and follows the format mm/yy."
+                    )
+            break
+        while True:
+            print("\nYou have requested statistics for these months:")
             for option in user_choices:
                 print(option)
-            want_add = input("Would you like to add another month to your request? yes/no ")
-            if want_add.lower() == "no":
+            want_change = input("\nWould you like to change anything? yes/no ")
+            if want_change.lower() == "no":
                 user_choices.sort(key= lambda date: datetime.strptime(date, "%m/%y"))
                 return user_choices
-            elif want_add.lower() == "yes":
+            elif want_change.lower() == "yes":
                 break
             else:
-                print("Something went wrong, try again: yes/no")   
+                print("Something went wrong, try again: yes/no")
 
 def get_stats_data(categories: list, user_choices: list) -> list:
     workbook = load_workbook(filename=file_path)
@@ -172,8 +180,8 @@ def prepare_message(stats_data: list) -> str:
     message = ""
     for month in stats_data:
         message += (
-            f"Here are statistics for {month['month']}:\n"
-            f"The total spent: {month['total']}\n"
+            f"\nHere are statistics for {month['month']}:\n"
+            f"\nThe total spent: {month['total']}\n"
             "\nThe highest transactions of the month: \n"
         )
 
@@ -186,6 +194,10 @@ def prepare_message(stats_data: list) -> str:
     return message
 
 def plot(categories: list, stats_data: list):
+    '''One x axis containing months created.
+    Then multiple y axis are created - one for totals,
+    one for each category'''
+    
     x = [i['month'] for i in stats_data]
     y_totals = [i['total'] for i in stats_data]
     plt.plot(x, y_totals, label='Totals')
