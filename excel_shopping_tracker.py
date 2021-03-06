@@ -2,6 +2,7 @@ from datetime import datetime
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill
 import os
+import matplotlib.pyplot as plt
 
 file_path = os.path.join(os.environ['USERPROFILE'], 'Desktop/Finances.xlsx')
 categories = ["baby", "regular groceries", "game", "car related", "taxi"]
@@ -14,9 +15,9 @@ def validate_date(user_input: str) -> bool:
         print("Incorrect date format, should be dd/mm/yyyy")
         return False
 
-def any_rows_to_add() -> bool:
+def ask_question(question: str) -> bool:
     while True:
-        answer = input("Would you like to add any new transactions to Excel? yes/no ")
+        answer = input(question + " yes/no ")
         if answer.lower() == "yes":
             return True
         elif answer.lower() == "no":
@@ -29,14 +30,14 @@ def collect_user_input(categories: list) -> list:
     while True:
         row = dict()
         while True:
-            row["date"] = input("What's the date of this purchase? Please use the format dd/mm/yyyy ")
+            row["date"] = input("\nWhat's the date of this purchase? Please use the format dd/mm/yyyy ")
             if validate_date(row["date"]):
                 break
             else:
                 print("Wrong format, try again")
 
         while True:
-            amount = input("What's the amount? ")
+            amount = input("\nWhat's the amount? ")
             if amount.isdigit():
                 row["amount"] = int(amount)
                 break
@@ -46,14 +47,14 @@ def collect_user_input(categories: list) -> list:
         while True:
             for count, value in enumerate(categories, start=1):
                 print(count, value)
-            index = int(input("Choose the category by writing its number "))
+            index = int(input("\nChoose the category by writing its number "))
             if 1 <= int(index) <= len(categories):
                 row["category"] = categories[index-1]
                 break
             else:
                 print("Please choose one of the available numbers ")
         
-        row["description"] = input("Add a short description for this purchase ")
+        row["description"] = input("\nAdd a short description for this purchase ")
         new_rows.append(row)
         
         while True:
@@ -137,14 +138,14 @@ def get_user_request(stats_options: list) -> list:
             print("So far you have requested statistics for these months:")
             for option in user_choices:
                 print(option)
-            want_quit = input("Would you like to add another month to your request? yes/no ")
-            if want_quit.lower() == "no":
+            want_add = input("Would you like to add another month to your request? yes/no ")
+            if want_add.lower() == "no":
+                user_choices.sort(key= lambda date: datetime.strptime(date, "%m/%y"))
                 return user_choices
-            elif want_quit.lower() == "yes":
+            elif want_add.lower() == "yes":
                 break
             else:
-                print("Something went wrong, try again: yes/no")
-    return user_choices    
+                print("Something went wrong, try again: yes/no")   
 
 def get_stats_data(categories: list, user_choices: list) -> list:
     workbook = load_workbook(filename=file_path)
@@ -166,16 +167,45 @@ def get_stats_data(categories: list, user_choices: list) -> list:
             new_dict["categories"][category] = sum([i[1] for i in all_transactions if i[2] == category])
         stats_data.append(new_dict)
     return stats_data
-        
-def print_stats(stats_data: list):
-    print(stats_data)
 
-#def plot(stats_data):
+def prepare_message(stats_data: list) -> str:
+    message = ""
+    for month in stats_data:
+        message += (
+            f"Here are statistics for {month['month']}:\n"
+            f"The total spent: {month['total']}\n"
+            "\nThe highest transactions of the month: \n"
+        )
+
+        for num, i in enumerate(month['top_5'], start=1):
+            message += f"{num}: {datetime.strftime(i[0], '%d/%m/%y')}, amount: {i[1]}, category: {i[2]}, details: {i[3]}\n"
+        
+        message += "\nTotals of each category:\n"
+        for k, v in month['categories'].items():
+            message += f"{k}: {v}\n"
+    return message
+
+def plot(categories: list, stats_data: list):
+    x = [i['month'] for i in stats_data]
+    y_totals = [i['total'] for i in stats_data]
+    plt.plot(x, y_totals, label='Totals')
+
+    for category in categories:
+        new_y = []
+        for month in stats_data:      
+            new_y.append(month['categories'][category])
+        plt.plot(x, new_y, label=category)
+    
+    plt.xlabel('Months')
+    plt.ylabel('Money spent in PLN')
+    plt.title('Money spending over months')
+    plt.legend()
+    plt.show()
 
 def main():
     if os.path.isfile(file_path) == False:
         create_new_excel()
-    if any_rows_to_add():
+    if ask_question("Would you like to add any rows to Excel?"):
         new_rows = collect_user_input(categories)
         save_new_rows_to_excel(new_rows)
     stats_options = get_stats_options()
@@ -183,10 +213,11 @@ def main():
         user_choices = get_user_request(stats_options)
         if user_choices != []:
             stats_data = get_stats_data(categories, user_choices)
-            print_stats(stats_data)
-            #if len(user_choices) > 1:
-                #plot(user_choices)
-    input("Hit the enter to exit. Thanks!")
+            message = prepare_message(stats_data)
+            print(message)
+            if len(user_choices) > 1:
+                plot(categories, stats_data)
+    input("\nHit the enter to exit. Thanks!")
 
 if __name__ == "__main__":
     main()
