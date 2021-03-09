@@ -8,6 +8,8 @@ file_path = os.path.join(os.environ['USERPROFILE'], 'Desktop/Finances.xlsx')
 categories = ["baby", "regular groceries", "game", "car related", "taxi"]
 
 def validate_date(user_input: str) -> bool:
+    '''Validates whether user inputs date in correct form'''
+
     try:
         datetime.strptime(user_input, "%d/%m/%Y")
         return True
@@ -16,6 +18,8 @@ def validate_date(user_input: str) -> bool:
         return False
 
 def ask_question(question: str) -> bool:
+    '''Asks a yes/no question which is given as input'''
+
     while True:
         answer = input(question + " yes/no ")
         if answer.lower() == "yes":
@@ -26,6 +30,8 @@ def ask_question(question: str) -> bool:
             print("Only yes or no answers accepted, try again")
 
 def collect_user_input(categories: list) -> list:
+    '''Creates a list of dictionaries, each dict for one transaction'''
+
     new_rows = []
     while True:
         row = dict()
@@ -71,6 +77,9 @@ def collect_user_input(categories: list) -> list:
 
 
 def create_new_excel():
+    '''Creates a new Excel file with 4 columns,
+    saves it to user's desktop'''
+
     workbook = Workbook()
     sheet = workbook.active
     sheet["A1"] = "Date"
@@ -83,6 +92,9 @@ def create_new_excel():
     workbook.close()
 
 def save_new_rows_to_excel(rows: list):
+    '''Accepts a list of transactions the user wants to add
+    and inserts them into Excel'''
+
     workbook = load_workbook(filename=file_path)
     sheet = workbook.active
     current_index = sheet.max_row + 1
@@ -96,6 +108,9 @@ def save_new_rows_to_excel(rows: list):
     workbook.save(filename=file_path)
 
 def get_stats_options() -> list:
+    '''Loops through all excel rows, 
+    returns a list of available months which user can get stats for'''
+
     workbook = load_workbook(filename=file_path)
     sheet = workbook.active
     options = []
@@ -108,9 +123,9 @@ def get_stats_options() -> list:
     return options  
 
 def get_user_request(stats_options: list) -> list:  
-    '''Ask if user wants to see stats.
-    If no, return empty list. If yes, print the available options.
-    Return a sorted list of chosen options'''
+    '''Asks if user wants to see stats.
+    If no, returns empty list. If yes, prints the available options.
+    Returns a sorted list of chosen options'''
     
     while True:
         answer = input("Would you like to see statistics? yes/no ")
@@ -156,6 +171,9 @@ def get_user_request(stats_options: list) -> list:
                 print("Something went wrong, try again: yes/no")
 
 def get_stats_data(categories: list, user_choices: list) -> list:
+    '''Returns a list of dictionaries, each dict for month chosen by the user
+    Dict contains month's name, total, top 5 transactions and sums for categories'''
+
     workbook = load_workbook(filename=file_path)
     sheet = workbook.active
     stats_data = []
@@ -177,6 +195,9 @@ def get_stats_data(categories: list, user_choices: list) -> list:
     return stats_data
 
 def prepare_message(stats_data: list) -> str:
+    '''Returns a message string with stats
+    for months chosen by the user'''
+    
     message = ""
     for month in stats_data:
         message += (
@@ -215,6 +236,11 @@ def plot(categories: list, stats_data: list):
     plt.show()
 
 def main():
+    '''First adds new rows to Excel if user wishes so.
+    Then gets all available months and display stats
+    for the ones chosen by the user (also optional).
+    If more than one month chosen, displays a chart'''
+
     if os.path.isfile(file_path) == False:
         create_new_excel()
     if ask_question("Would you like to add any rows to Excel?"):
