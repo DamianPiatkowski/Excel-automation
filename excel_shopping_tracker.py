@@ -76,7 +76,7 @@ def collect_user_input(categories: list) -> list:
             return new_rows
 
 
-def create_new_excel():
+def create_new_excel(file_path: str):
     '''Creates a new Excel file with 4 columns,
     saves it to user's desktop'''
 
@@ -91,7 +91,7 @@ def create_new_excel():
     workbook.save(filename=file_path)
     workbook.close()
 
-def save_new_rows_to_excel(rows: list):
+def save_new_rows_to_excel(rows: list, file_path: str):
     '''Accepts a list of transactions the user wants to add
     and inserts them into Excel'''
 
@@ -242,10 +242,10 @@ def main():
     If more than one month chosen, displays a chart'''
 
     if os.path.isfile(file_path) == False:
-        create_new_excel()
+        create_new_excel(file_path)
     if ask_question("Would you like to add any rows to Excel?"):
         new_rows = collect_user_input(categories)
-        save_new_rows_to_excel(new_rows)
+        save_new_rows_to_excel(new_rows, file_path)
     stats_options = get_stats_options()
     if stats_options != []:
         user_choices = get_user_request(stats_options)
