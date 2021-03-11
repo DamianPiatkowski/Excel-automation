@@ -5,12 +5,16 @@ import datetime
 import os
 import pathlib
 from openpyxl import Workbook, load_workbook
+import matplotlib.pyplot as plt
 
-categories = ["groceries", "game", "car related", "baby", "taxi"]
+categories = ["baby", "regular groceries", "game", "car related", "taxi"]
 temp_file_path = os.path.join('C:/Users', os.environ['USERPROFILE'], 'AppData/Local/Temp/test_Finances.xlsx')
 file_path = str(pathlib.Path().absolute()) + '/tests/test1.xlsx'
+second_file_path = str(pathlib.Path().absolute()) + '/tests/test2.xlsx'
 
 class TestApp(unittest.TestCase):
+
+    maxDiff = None
 
     def test_validate_date(self):
         self.assertEqual(excel_shopping_tracker.validate_date("12/12/2020"), True)
@@ -39,13 +43,13 @@ class TestApp(unittest.TestCase):
         with patch('builtins.input') as mocked_input:
             mocked_input.side_effect = ["10/12/2020", "123", "2", "Zelda rules", "no"]
             result = excel_shopping_tracker.collect_user_input(categories)
-            self.assertEqual(result, [{'date': '10/12/2020', 'amount': 123, 'category': 'game', 'description': 'Zelda rules'}])
+            self.assertEqual(result, [{'date': '10/12/2020', 'amount': 123, 'category': 'regular groceries', 'description': 'Zelda rules'}])
         
         # Wrong formats first
         with patch('builtins.input') as mocked_input:
             mocked_input.side_effect = ["10/13/2020", "2021/12/03", "10/12/2019", "one hundred", "100", "6", "4", "2 packages of diapers", "no"]
             result = excel_shopping_tracker.collect_user_input(categories)
-            self.assertEqual(result, [{'date': '10/12/2019', 'amount': 100, 'category': 'baby', 'description': '2 packages of diapers'}])
+            self.assertEqual(result, [{'date': '10/12/2019', 'amount': 100, 'category': 'car related', 'description': '2 packages of diapers'}])
         
         # Multiple rows
         with patch('builtins.input') as mocked_input:
@@ -58,9 +62,9 @@ class TestApp(unittest.TestCase):
             self.assertEqual(
                     result,
                     [
-                        {'date': '10/01/2021', 'amount': 100, 'category': 'car related', 'description': 'fuel'},
-                        {'date': '12/01/2021', 'amount': 23, 'category': 'game', 'description': 'Mario'}, 
-                        {'date': '14/01/2021', 'amount': 455, 'category': 'groceries', 'description': 'Auchan'}
+                        {'date': '10/01/2021', 'amount': 100, 'category': 'game', 'description': 'fuel'},
+                        {'date': '12/01/2021', 'amount': 23, 'category': 'regular groceries', 'description': 'Mario'}, 
+                        {'date': '14/01/2021', 'amount': 455, 'category': 'baby', 'description': 'Auchan'}
                     ]
                 )
 
@@ -98,6 +102,96 @@ class TestApp(unittest.TestCase):
     
     def tearDown(self):
         os.remove(file_path)
+
+    def test_get_stats_options(self):
+        options = excel_shopping_tracker.get_stats_options(second_file_path)
+        print(options)
+        self.assertEqual(options, ['09/20', '10/20', '11/20', '12/20', '03/21', '10/21'])
+
+    def test_get_user_request(self):
+         options = ['08/19', '09/20', '10/20', '11/20', '12/20', '03/21', '10/21']
+         
+         # user does not want statistics
+         with patch('builtins.input') as mocked_input:
+            mocked_input.side_effect = ["no"]
+            result = excel_shopping_tracker.get_user_request(options)
+            self.assertEqual(result, [])
+        
+        # incorrect input given first
+         with patch('builtins.input') as mocked_input:
+            mocked_input.side_effect = ["yup", "yes", "March 20 April 20", "08/19 09/20 10/20", "no"]
+            result = excel_shopping_tracker.get_user_request(options)
+            self.assertEqual(result, ['08/19', '09/20', '10/20'])
+        
+        # all good first time
+         with patch('builtins.input') as mocked_input:
+            mocked_input.side_effect = ["yes", "08/19 09/20 10/20 11/20 12/20", "no"]
+            result = excel_shopping_tracker.get_user_request(options)
+            self.assertEqual(result, ['08/19', '09/20', '10/20', '11/20', '12/20'])
+    
+    def test_get_stats_data(self):
+        result = excel_shopping_tracker.get_stats_data(
+            categories, ['09/20', '10/20', '11/20', '12/20'], second_file_path
+        )
+        
+        self.assertEqual(
+            result,
+            [
+                {'month': '09/20', 'total': 23, 'top_5': [(datetime.datetime(2020, 9, 13, 0, 0), 23, 'game', 'test 123')],
+                'categories': {'baby': 0, 'regular groceries': 0, 'game': 23, 'car related': 0, 'taxi': 0}},
+
+                {'month': '10/20', 'total': 120, 'top_5': [(datetime.datetime(2020, 10, 16, 0, 0), 120, 'taxi', 'test 126')],
+                'categories': {'baby': 0, 'regular groceries': 0, 'game': 0, 'car related': 0, 'taxi': 120}},
+
+                {'month': '11/20', 'total': 232, 'top_5': [(datetime.datetime(2020, 11, 18, 0, 0), 232, 'baby', 'test 128')],
+                'categories': {'baby': 232, 'regular groceries': 0, 'game': 0, 'car related': 0, 'taxi': 0}},
+
+                {'month': '12/20', 'total': 525,
+                'top_5': [(datetime.datetime(2020, 12, 12, 0, 0), 345, 'taxi', 'sdfsdfsdfsdf'), (datetime.datetime(2020, 12, 17, 0, 0), 123, 'baby', 'test 127'),
+                (datetime.datetime(2020, 12, 14, 0, 0), 34, 'groceries', 'test 124'), (datetime.datetime(2020, 12, 15, 0, 0), 23, 'groceries', 'test 125')],
+                'categories': {'baby': 123, 'regular groceries': 0, 'game': 0, 'car related': 0, 'taxi': 345}}
+            ]
+        )
+    
+    def test_prepare_message(self):
+        stats_data = [
+            {'month': '09/20', 'total': 23, 'top_5': [(datetime.datetime(2020, 9, 13, 0, 0), 23, 'game', 'test 123')],
+                'categories': {'baby': 0, 'regular groceries': 0, 'game': 23, 'car related': 0, 'taxi': 0}},
+        ]
+
+        expected_message = """
+Here are statistics for 09/20:
+
+The total spent: 23
+
+The highest transactions of the month: 
+1: 13/09/20, amount: 23, category: game, details: test 123
+
+Totals of each category:
+baby: 0
+regular groceries: 0
+game: 23
+car related: 0
+taxi: 0
+"""
+            
+
+        result = excel_shopping_tracker.prepare_message(stats_data)
+
+        self.assertEqual(result, expected_message)
+
+    def test_plot(self):
+        stats_data1 = [
+                {'month': '09/20', 'total': 23, 'top_5': [(datetime.datetime(2020, 9, 13, 0, 0), 23, 'game', 'test 123')],
+                'categories': {'baby': 0, 'regular groceries': 0, 'game': 23, 'car related': 0, 'taxi': 0}},
+
+                {'month': '10/20', 'total': 120, 'top_5': [(datetime.datetime(2020, 10, 16, 0, 0), 120, 'taxi', 'test 126')],
+                'categories': {'baby': 0, 'regular groceries': 0, 'game': 0, 'car related': 0, 'taxi': 120}},
+        ]
+    
+        with patch("excel_shopping_tracker.plt.show") as show_patch:
+            excel_shopping_tracker.plot(categories, stats_data1)
+            assert show_patch.called
 
 if __name__ == '__main__':
     unittest.main()
