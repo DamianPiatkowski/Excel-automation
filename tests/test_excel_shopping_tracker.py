@@ -1,11 +1,13 @@
-import excel_shopping_tracker
-import unittest
-from unittest.mock import patch
 import datetime
 import os
 import pathlib
-from openpyxl import Workbook, load_workbook
+import re
+import unittest
+from unittest.mock import patch
+
+import excel_shopping_tracker
 import matplotlib.pyplot as plt
+from openpyxl import Workbook, load_workbook
 
 categories = ["baby", "regular groceries", "game", "car related", "taxi"]
 temp_file_path = os.path.join('C:/Users', os.environ['USERPROFILE'], 'AppData/Local/Temp/test_Finances.xlsx')
@@ -21,6 +23,12 @@ class TestApp(unittest.TestCase):
         self.assertEqual(excel_shopping_tracker.validate_date("2021/06/22"), False)
         self.assertEqual(excel_shopping_tracker.validate_date("test"), False)
 
+    def test_validate_price(self):
+        self.assertEqual(excel_shopping_tracker.validate_price("29.99"), True)
+        self.assertEqual(excel_shopping_tracker.validate_price("20"), True)
+        self.assertEqual(excel_shopping_tracker.validate_price("yo"), False)
+        self.assertEqual(excel_shopping_tracker.validate_price("123.23.34"), False)
+    
     def test_ask_question(self):
         # First not allowed input is given, then yes
         with patch('builtins.input') as mocked_input:
@@ -54,16 +62,16 @@ class TestApp(unittest.TestCase):
         # Multiple rows
         with patch('builtins.input') as mocked_input:
             mocked_input.side_effect = (
-                    "10/01/2021", "100", "3", "fuel", "yes",
-                    "12/01/2021", "23", "2", "Mario", "yes",
+                    "10/01/2021", "100.99", "3", "fuel", "yes",
+                    "12/01/2021", "23.88", "2", "Mario", "yes",
                     "14/01/2021", "455", "1", "Auchan", "no"
                 )
             result = excel_shopping_tracker.collect_user_input(categories)
             self.assertEqual(
                     result,
                     [
-                        {'date': '10/01/2021', 'amount': 100, 'category': 'game', 'description': 'fuel'},
-                        {'date': '12/01/2021', 'amount': 23, 'category': 'regular groceries', 'description': 'Mario'}, 
+                        {'date': '10/01/2021', 'amount': 100.99, 'category': 'game', 'description': 'fuel'},
+                        {'date': '12/01/2021', 'amount': 23.88, 'category': 'regular groceries', 'description': 'Mario'}, 
                         {'date': '14/01/2021', 'amount': 455, 'category': 'baby', 'description': 'Auchan'}
                     ]
                 )

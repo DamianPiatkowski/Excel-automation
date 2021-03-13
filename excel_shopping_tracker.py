@@ -1,8 +1,10 @@
+import os
+import re
 from datetime import datetime
+
+import matplotlib.pyplot as plt
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill
-import os
-import matplotlib.pyplot as plt
 
 file_path = os.path.join(os.environ['USERPROFILE'], 'Desktop/Finances.xlsx')
 categories = ["baby", "regular groceries", "game", "car related", "taxi"]
@@ -17,9 +19,13 @@ def validate_date(user_input: str) -> bool:
         print("Incorrect date format, should be dd/mm/yyyy")
         return False
 
+def validate_price(user_input: str) -> bool:
+    match = re.search(r"^\d+(\.\d{2})?$", user_input)
+    return True if match != None else False
+
 def ask_question(question: str) -> bool:
     '''Asks a yes/no question which is given as input'''
-
+    
     while True:
         answer = input(question + " yes/no ")
         if answer.lower() == "yes":
@@ -43,12 +49,12 @@ def collect_user_input(categories: list) -> list:
                 print("Wrong format, try again")
 
         while True:
-            amount = input("\nWhat's the amount? ")
-            if amount.isdigit():
-                row["amount"] = int(amount)
+            amount = input("\nWhat's the amount? for example 29.99 or 20 ")
+            if validate_price(amount):
+                row["amount"] = float(amount)
                 break
             else:
-                print("Please give just the number ")
+                print("Please give the number, decimals are optional, two are allowed, after a dot, eg. 29.99 ")
         
         while True:
             for count, value in enumerate(categories, start=1):
@@ -107,7 +113,7 @@ def save_new_rows_to_excel(rows: list, file_path: str):
     
     workbook.save(filename=file_path)
 
-def get_stats_options() -> list:
+def get_stats_options(file_path: str) -> list:
     '''Loops through all excel rows, 
     returns a list of available months which user can get stats for'''
 
@@ -120,7 +126,7 @@ def get_stats_options() -> list:
             options.append(month_year) 
     # Sort chronologically in case the user did not feed excel with dates in chronological order 
     options.sort(key= lambda date: datetime.strptime(date, "%m/%y"))
-    return options  
+    return options
 
 def get_user_request(stats_options: list) -> list:  
     '''Asks if user wants to see stats.
@@ -148,15 +154,18 @@ def get_user_request(stats_options: list) -> list:
                 "\n'01/20 02/20 03/20 04/20' Your choices: "
             )
             
+            is_correct = True
             for option in options_chosen.split():
                 if option in stats_options:
                     user_choices.append(option)
                 else:
+                    is_correct = False
                     print(
                         "\n" + option + " is not available."
                         "\nMake sure the option is valid and follows the format mm/yy."
                     )
-            break
+            if is_correct:
+                break
         while True:
             print("\nYou have requested statistics for these months:")
             for option in user_choices:
@@ -170,7 +179,7 @@ def get_user_request(stats_options: list) -> list:
             else:
                 print("Something went wrong, try again: yes/no")
 
-def get_stats_data(categories: list, user_choices: list) -> list:
+def get_stats_data(categories: list, user_choices: list, file_path: str) -> list:
     '''Returns a list of dictionaries, each dict for month chosen by the user
     Dict contains month's name, total, top 5 transactions and sums for categories'''
 
@@ -192,6 +201,7 @@ def get_stats_data(categories: list, user_choices: list) -> list:
         for category in categories:
             new_dict["categories"][category] = sum([i[1] for i in all_transactions if i[2] == category])
         stats_data.append(new_dict)
+    print(stats_data)
     return stats_data
 
 def prepare_message(stats_data: list) -> str:
@@ -246,11 +256,11 @@ def main():
     if ask_question("Would you like to add any rows to Excel?"):
         new_rows = collect_user_input(categories)
         save_new_rows_to_excel(new_rows, file_path)
-    stats_options = get_stats_options()
+    stats_options = get_stats_options(file_path)
     if stats_options != []:
         user_choices = get_user_request(stats_options)
         if user_choices != []:
-            stats_data = get_stats_data(categories, user_choices)
+            stats_data = get_stats_data(categories, user_choices, file_path)
             message = prepare_message(stats_data)
             print(message)
             if len(user_choices) > 1:
