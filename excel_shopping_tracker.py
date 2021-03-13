@@ -201,7 +201,6 @@ def get_stats_data(categories: list, user_choices: list, file_path: str) -> list
         for category in categories:
             new_dict["categories"][category] = sum([i[1] for i in all_transactions if i[2] == category])
         stats_data.append(new_dict)
-    print(stats_data)
     return stats_data
 
 def prepare_message(stats_data: list) -> str:
